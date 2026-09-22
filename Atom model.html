@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atom Builder 3D — Atomic Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --bg-deep:      #030a16;
+  --bg-mid:       #060f22;
+  --bg-card:      #0b1c3a;
+  --bg-card2:     #091528;
+  --proton-col:   #ff4d6d;
+  --proton-glow:  #ff0040;
+  --neutron-col:  #00d4ff;
+  --neutron-glow: #00aaff;
+  --electron-col: #ffe94d;
+  --electron-glow:#ffcc00;
+  --accent-green: #00ffaa;
+  --accent-purple:#c77dff;
+  --text-bright:  #e8f4ff;
+  --text-dim:     #7a9bbf;
+  --border-glow:  rgba(0,200,255,0.25);
+  --font-game:    'Orbitron', monospace;
+  --font-body:    'Exo 2', sans-serif;
+  --font-bangla:  'Hind Siliguri', sans-serif;
+  --transition:   all 0.3s cubic-bezier(0.4,0,0.2,1);
+  --shadow-card:  0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,200,255,0.1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg-deep);
+  color: var(--text-bright);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,100,200,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(100,0,200,0.12) 0%, transparent 70%);
+}
+body.bangla { font-family: var(--font-bangla); }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 8%  15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 65%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 8%,  rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 78% 78%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 45%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 93% 30%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 12% 88%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 68% 42%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 25%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 20% 50%, rgba(0,200,255,0.4) 0%, transparent 100%),
+    radial-gradient(2px 2px at 70% 20%, rgba(200,100,255,0.3) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes twinkle { 0%{opacity:0.7} 100%{opacity:1} }
+
+/* HEADER */
+#app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: rgba(3,10,22,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#app-header .logo {
+  font-family: var(--font-game);
+  font-size: clamp(1rem, 3vw, 1.35rem);
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, #00d4ff, #c77dff, #ff4d6d);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+#app-header .logo span { display: block; font-size: 0.48em; letter-spacing: 4px; opacity: 0.65; }
+.header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.header-score {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-family: var(--font-game);
+  font-size: 0.8rem;
+  color: var(--accent-green);
+  text-align: center;
+  min-width: 60px;
+}
+.header-score span { color: var(--text-dim); font-size: 0.65em; display: block; }
+.btn-lang, .btn-sound, .btn-help {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--text-bright);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  transition: var(--transition);
+}
+.btn-lang:hover, .btn-sound:hover, .btn-help:hover {
+  background: rgba(0,200,255,0.15);
+  border-color: #00d4ff;
+  color: #00d4ff;
+}
+
+/* NAV TABS */
+#nav-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 20px;
+  background: rgba(6,15,34,0.75);
+  border-bottom: 1px solid rgba(0,200,255,0.07);
+  flex-wrap: wrap;
+}
+.tab-btn {
+  background: transparent;
+  border: 1px solid rgba(0,200,255,0.2);
+  border-radius: 30px;
+  padding: 7px 20px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: var(--transition);
+}
+.tab-btn:hover { color: #00d4ff; border-color: #00d4ff; }
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(0,180,255,0.18), rgba(100,0,200,0.18));
+  border-color: #00d4ff;
+  color: #00d4ff;
+  box-shadow: 0 0 18px rgba(0,200,255,0.2);
+}
+.tab-btn .icon { margin-right: 5px; }
+
+/* MAIN */
+#main-content { padding: 20px 14px; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* PANEL */
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow-card);
+}
+.panel-title {
+  font-family: var(--font-game);
+  font-size: 0.82rem;
+  letter-spacing: 2px;
+  color: #00d4ff;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-title::before { content: '//'; color: var(--accent-purple); }
+
+/* SECTIONS */
+#section-builder { display: none; }
+#section-builder.active { display: block; }
+#section-quiz { display: none; }
+#section-quiz.active { display: block; }
+#section-learn { display: none; }
+#section-learn.active { display: block; }
+
+/* BUILDER LAYOUT */
+.builder-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr 210px;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 850px) {
+  .builder-layout { grid-template-columns: 1fr; }
+}
+
+/* Level list */
+.level-list { display: flex; flex-direction: column; gap: 7px; max-height: 520px; overflow-y: auto; padding-right: 3px; }
+.level-list::-webkit-scrollbar { width: 4px; }
+.level-list::-webkit-scrollbar-thumb { background: rgba(0,200,255,0.3); border-radius: 2px; }
+.level-btn {
+  background: var(--bg-card2);
+  border: 1px solid rgba(0,200,255,0.12);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.level-btn .lv-num { font-family: var(--font-game); font-size: 0.62rem; color: var(--accent-purple); min-width: 42px; }
+.level-btn .lv-name { font-weight: 600; color: var(--text-bright); flex: 1; }
+.level-btn .lv-sym { font-family: var(--font-game); font-size: 1rem; color: #00d4ff; }
+.level-btn .lv-check { color: var(--accent-green); font-size: 0.85rem; }
+.level-btn:hover, .level-btn.active {
+  background: rgba(0,200,255,0.09);
+  border-color: #00d4ff;
+  color: #00d4ff;
+}
+.level-btn.completed { border-color: rgba(0,255,170,0.4); }
+.level-btn.completed .lv-name { color: var(--accent-green); }
+
+/* ===== 3D ATOM CANVAS ===== */
+#atom-canvas-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 420px;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(0,200,255,0.15),
+    0 0 60px rgba(0,100,200,0.2),
+    inset 0 0 80px rgba(0,0,40,0.8);
+  cursor: grab;
+}
+#atom-canvas-wrap:active { cursor: grabbing; }
+#atom-canvas-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50%;
+}
+
+/* Drop overlay for drag-n-drop */
+#drop-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px dashed transparent;
+  pointer-events: none;
+  transition: all 0.25s;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#drop-overlay.drag-over {
+  border-color: #00d4ff;
+  background: rgba(0,200,255,0.07);
+  box-shadow: inset 0 0 40px rgba(0,180,255,0.15);
+}
+#drop-overlay .drop-hint {
+  font-family: var(--font-game);
+  font-size: 0.72rem;
+  color: #00d4ff;
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+#drop-overlay.drag-over .drop-hint { opacity: 1; }
+
+/* Ready glow ring */
+#atom-canvas-wrap.ready {
+  box-shadow:
+    0 0 0 2px var(--accent-green),
+    0 0 60px rgba(0,255,170,0.45),
+    inset 0 0 80px rgba(0,0,40,0.8);
+  animation: readyPulse 1.5s ease-in-out infinite;
+}
+@keyframes readyPulse {
+  0%,100% { box-shadow: 0 0 0 2px var(--accent-green), 0 0 60px rgba(0,255,170,0.45), inset 0 0 80px rgba(0,0,40,0.8); }
+  50% { box-shadow: 0 0 0 3px var(--accent-green), 0 0 90px rgba(0,255,170,0.7), inset 0 0 80px rgba(0,0,40,0.8); }
+}
+
+/* 3D Badge */
+.badge-3d {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(199,125,255,0.25));
+  border: 1px solid rgba(0,212,255,0.4);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: var(--font-game);
+  font-size: 0.58rem;
+  color: #00d4ff;
+  letter-spacing: 2px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Particle tray */
+.particle-tray { display: flex; flex-direction: column; gap: 9px; }
+.tray-title { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 1px; margin-bottom: 5px; }
+.tray-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--bg-card2);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 9px;
+  transition: var(--transition);
+}
+.tray-item:hover { border-color: rgba(0,200,255,0.2); }
+.tray-particle {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700;
+  cursor: grab;
+  flex-shrink: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+  user-select: none;
+  position: relative;
+}
+.tray-particle:active { cursor: grabbing; transform: scale(1.12); }
+.tray-particle.proton {
+  background: radial-gradient(circle at 35% 35%, #ff8fa3, var(--proton-col));
+  box-shadow: 0 0 16px var(--proton-glow), inset 0 0 8px rgba(255,255,255,0.2);
+  color: #fff;
+}
+.tray-particle.neutron {
+  background: radial-gradient(circle at 35% 35%, #66e8ff, var(--neutron-col));
+  box-shadow: 0 0 16px var(--neutron-glow), inset 0 0 8px rgba(255,255,255,0.2);
+  color: #003;
+}
+.tray-particle.electron {
+  background: radial-gradient(circle at 35% 35%, #fff5a0, var(--electron-col));
+  box-shadow: 0 0 16px var(--electron-glow), inset 0 0 8px rgba(255,255,255,0.3);
+  color: #333;
+}
+.tray-info { flex: 1; }
+.tray-info strong { display: block; font-size: 0.8rem; color: var(--text-bright); }
+.tray-info span { font-size: 0.68rem; color: var(--text-dim); }
+.tray-counter {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-family: var(--font-game);
+  font-size: 0.88rem;
+  color: var(--accent-green);
+  display: flex; align-items: center; gap: 5px;
+}
+.tray-counter button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 3px;
+  transition: color 0.2s, transform 0.1s;
+}
+.tray-counter button:hover { color: var(--text-bright); transform: scale(1.2); }
+
+/* Target panel */
+#target-panel {
+  background: var(--bg-card2);
+  border: 1px solid rgba(0,200,255,0.15);
+  border-radius: 12px;
+  padding: 14px;
+}
+.target-atom-name {
+  font-family: var(--font-game); font-size: 1rem; color: #00d4ff;
+  text-align: center; margin-bottom: 4px;
+}
+.target-symbol {
+  font-family: var(--font-game);
+  font-size: 2.8rem;
+  color: var(--text-bright);
+  text-align: center;
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(0,200,255,0.6);
+  margin: 8px 0;
+}
+.target-symbol sup { font-size: 1.1rem; color: var(--accent-purple); vertical-align: super; }
+.target-symbol sub { font-size: 1.1rem; color: #00d4ff; vertical-align: sub; }
+.target-category-badge {
+  display: block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-family: var(--font-game);
+  letter-spacing: 1px;
+  margin: 4px auto 10px;
+  text-align: center;
+  background: rgba(0,200,255,0.1);
+  border: 1px solid rgba(0,200,255,0.25);
+  color: #00d4ff;
+}
+.target-requirements { margin-top: 8px; }
+.req-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.78rem;
+}
+.req-row:last-child { border-bottom: none; }
+.req-label { color: var(--text-dim); }
+.req-val { font-family: var(--font-game); font-size: 0.88rem; }
+.req-val.proton { color: var(--proton-col); }
+.req-val.neutron { color: var(--neutron-col); }
+.req-val.electron { color: var(--electron-col); }
+.req-progress { width: 100%; height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; margin-top: 3px; overflow: hidden; }
+.req-progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+.req-progress-fill.proton { background: linear-gradient(90deg, #ff4d6d, #ff8fa3); box-shadow: 0 0 6px var(--proton-glow); }
+.req-progress-fill.neutron { background: linear-gradient(90deg, #00d4ff, #66e8ff); box-shadow: 0 0 6px var(--neutron-glow); }
+.req-progress-fill.electron { background: linear-gradient(90deg, #ffe94d, #fff5a0); box-shadow: 0 0 6px var(--electron-glow); }
+
+/* Check/Reset buttons */
+#btn-check {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #004488, #006ebb);
+  border: 1px solid #00aaff;
+  border-radius: 10px;
+  color: #fff;
+  font-family: var(--font-game);
+  font-size: 0.78rem;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 0 20px rgba(0,100,200,0.3);
+}
+#btn-check:hover {
+  background: linear-gradient(135deg, #005599, #0088ff);
+  box-shadow: 0 0 30px rgba(0,150,255,0.55);
+  transform: translateY(-2px);
+}
+#btn-reset {
+  margin-top: 7px;
+  width: 100%;
+  padding: 9px;
+  background: transparent;
+  border: 1px solid rgba(255,100,100,0.3);
+  border-radius: 10px;
+  color: rgba(255,120,120,0.75);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+#btn-reset:hover {
+  background: rgba(255,80,80,0.08);
+  border-color: rgba(255,80,80,0.5);
+  color: #ff8080;
+}
+
+/* Current build counts */
+.current-counts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.count-badge {
+  flex: 1; min-width: 65px;
+  background: var(--bg-card2);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: var(--transition);
+}
+.count-badge.active-add { border-color: rgba(0,255,170,0.4); background: rgba(0,255,170,0.05); }
+.count-badge .cb-num { font-family: var(--font-game); font-size: 1.5rem; }
+.count-badge .cb-label { font-size: 0.62rem; color: var(--text-dim); display: block; margin-top: 2px; }
+.count-badge.p-badge .cb-num { color: var(--proton-col); }
+.count-badge.n-badge .cb-num { color: var(--neutron-col); }
+.count-badge.e-badge .cb-num { color: var(--electron-col); }
+
+/* ELEMENT INFO PANEL */
+.element-info-bar {
+  margin-top: 12px;
+  background: var(--bg-card2);
+  border: 1px solid rgba(0,200,255,0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.element-info-bar .eib-fact {
+  flex: 1; min-width: 100px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.element-info-bar .eib-fact strong { color: var(--text-bright); display: block; margin-bottom: 2px; font-size: 0.7rem; }
+
+/* HINT SYSTEM */
+.hint-bar {
+  margin-top: 10px;
+  background: rgba(255,180,0,0.07);
+  border: 1px solid rgba(255,180,0,0.2);
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-size: 0.78rem;
+  color: #ffd566;
+  display: none;
+  line-height: 1.5;
+}
+.hint-bar.show { display: block; }
+
+/* ===== QUIZ ===== */
+.quiz-layout {
+  display: grid;
+  grid-template-columns: 1fr 250px;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 700px) { .quiz-layout { grid-template-columns: 1fr; } }
+.quiz-question-num { font-family: var(--font-game); font-size: 0.72rem; color: var(--accent-purple); letter-spacing: 2px; margin-bottom: 10px; }
+.quiz-question-text { font-size: 1.05rem; font-weight: 600; color: var(--text-bright); line-height: 1.55; margin-bottom: 18px; min-height: 50px; }
+.quiz-options { display: flex; flex-direction: column; gap: 9px; }
+.quiz-opt {
+  background: var(--bg-card2);
+  border: 1px solid rgba(0,200,255,0.15);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text-bright);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  transition: var(--transition);
+  display: flex; align-items: center; gap: 12px;
+}
+.quiz-opt:hover:not(.disabled) { background: rgba(0,200,255,0.09); border-color: #00d4ff; transform: translateX(4px); }
+.quiz-opt.correct { background: rgba(0,255,100,0.12); border-color: #00ff88; color: #00ff88; }
+.quiz-opt.wrong   { background: rgba(255,60,60,0.12);  border-color: #ff4444; color: #ff8888; }
+.quiz-opt.disabled { cursor: default; }
+.opt-letter {
+  font-family: var(--font-game);
+  font-size: 0.7rem;
+  background: rgba(0,200,255,0.15);
+  border-radius: 6px;
+  padding: 2px 7px;
+  color: #00d4ff;
+  flex-shrink: 0;
+}
+.quiz-nav-btn {
+  background: linear-gradient(135deg, rgba(0,150,255,0.2), rgba(100,0,200,0.2));
+  border: 1px solid #00d4ff;
+  border-radius: 10px;
+  padding: 11px 24px;
+  color: #00d4ff;
+  cursor: pointer;
+  font-family: var(--font-game);
+  font-size: 0.78rem;
+  letter-spacing: 1px;
+  transition: var(--transition);
+  margin-top: 14px;
+}
+.quiz-nav-btn:hover { background: linear-gradient(135deg, rgba(0,180,255,0.3), rgba(120,0,240,0.3)); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,150,255,0.3); }
+.quiz-score-panel { text-align: center; }
+.score-big { font-family: var(--font-game); font-size: 2.8rem; color: var(--accent-green); text-shadow: 0 0 20px rgba(0,255,170,0.5); line-height: 1; margin: 10px 0 4px; }
+.quiz-progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; margin: 12px 0 8px; overflow: hidden; }
+.quiz-progress-fill { height: 100%; background: linear-gradient(90deg, #00d4ff, var(--accent-green)); border-radius: 3px; transition: width 0.5s ease; box-shadow: 0 0 8px rgba(0,200,255,0.4); }
+
+/* ===== LEARN ===== */
+.learn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.learn-card {
+  background: var(--bg-card2);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 22px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+.learn-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+.learn-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.learn-card.proton-card::before { background: radial-gradient(circle at 50% 0%, rgba(255,77,109,0.1) 0%, transparent 60%); }
+.learn-card.neutron-card::before { background: radial-gradient(circle at 50% 0%, rgba(0,212,255,0.1) 0%, transparent 60%); }
+.learn-card.electron-card::before { background: radial-gradient(circle at 50% 0%, rgba(255,233,77,0.1) 0%, transparent 60%); }
+.learn-card .lc-icon {
+  width: 62px; height: 62px;
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.7rem; font-weight: 700;
+  font-family: var(--font-game);
+}
+.learn-card.proton-card .lc-icon { background: radial-gradient(circle at 35% 35%, #ff8fa3, var(--proton-col)); box-shadow: 0 0 24px var(--proton-glow); color:#fff; }
+.learn-card.neutron-card .lc-icon { background: radial-gradient(circle at 35% 35%, #66e8ff, var(--neutron-col)); box-shadow: 0 0 24px var(--neutron-glow); color:#003; }
+.learn-card.electron-card .lc-icon { background: radial-gradient(circle at 35% 35%, #fff5a0, var(--electron-col)); box-shadow: 0 0 24px var(--electron-glow); color:#333; }
+.learn-card h3 { text-align: center; font-family: var(--font-game); font-size: 0.88rem; margin-bottom: 10px; letter-spacing: 1px; }
+.learn-card.proton-card h3 { color: var(--proton-col); }
+.learn-card.neutron-card h3 { color: var(--neutron-col); }
+.learn-card.electron-card h3 { color: var(--electron-col); }
+.learn-card p { font-size: 0.83rem; color: var(--text-dim); line-height: 1.7; text-align: center; }
+.learn-facts { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.learn-fact {
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.learn-fact .fact-icon { flex-shrink: 0; }
+
+/* Atom comparison table */
+.atom-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8rem; }
+.atom-table th { background: rgba(0,200,255,0.08); color: #00d4ff; font-family: var(--font-game); font-size: 0.65rem; letter-spacing: 1px; padding: 10px 10px; text-align: left; border-bottom: 1px solid rgba(0,200,255,0.18); }
+.atom-table td { padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text-dim); }
+.atom-table tr:hover td { background: rgba(0,200,255,0.04); color: var(--text-bright); }
+.atom-table .sym { font-family: var(--font-game); color: #00d4ff; font-size: 1rem; }
+.atom-table .p-col { color: var(--proton-col); font-family: var(--font-game); }
+.atom-table .n-col { color: var(--neutron-col); font-family: var(--font-game); }
+.atom-table .e-col { color: var(--electron-col); font-family: var(--font-game); }
+
+/* Particle tooltip */
+#particle-tooltip {
+  position: fixed;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 12px;
+  padding: 12px 16px;
+  max-width: 220px;
+  font-size: 0.79rem;
+  color: var(--text-bright);
+  z-index: 300;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+#particle-tooltip.visible { opacity: 1; }
+#particle-tooltip .tip-title { font-family: var(--font-game); font-size: 0.72rem; margin-bottom: 5px; }
+#particle-tooltip .tip-text { color: var(--text-dim); line-height: 1.55; }
+
+/* Feedback Toast */
+#feedback-toast {
+  position: fixed;
+  bottom: 30px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 14px;
+  padding: 14px 22px;
+  display: flex; align-items: flex-start; gap: 12px;
+  z-index: 400;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  min-width: 260px; max-width: 420px;
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s;
+}
+#feedback-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+#feedback-toast.success { border-color: var(--accent-green); }
+#feedback-toast.error { border-color: #ff4d6d; }
+#feedback-toast.hint { border-color: #ffd566; }
+#toast-icon { font-size: 1.4rem; }
+#toast-msg { font-family: var(--font-game); font-size: 0.85rem; color: var(--text-bright); }
+#toast-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+
+/* Celebration overlay */
+#celebration {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 500;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s;
+}
+#celebration.show { opacity: 1; pointer-events: all; }
+.celeb-content { text-align: center; animation: popIn 0.55s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popIn { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.celeb-emoji { font-size: 5.5rem; margin-bottom: 14px; filter: drop-shadow(0 0 25px gold); }
+.celeb-title { font-family: var(--font-game); font-size: clamp(1.4rem, 4vw, 2.2rem); color: var(--accent-green); text-shadow: 0 0 35px rgba(0,255,170,0.8); margin-bottom: 8px; letter-spacing: 2px; }
+.celeb-sub { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 24px; }
+.celeb-element { font-family: var(--font-game); font-size: 0.8rem; color: #00d4ff; margin-bottom: 8px; background: rgba(0,200,255,0.1); display: inline-block; padding: 4px 16px; border-radius: 20px; border: 1px solid rgba(0,200,255,0.3); }
+.celeb-btn {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #00aa66, #00ffaa);
+  border: none;
+  border-radius: 12px;
+  color: #000;
+  font-family: var(--font-game);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  letter-spacing: 1px;
+}
+.celeb-btn:hover { transform: scale(1.06); box-shadow: 0 0 35px rgba(0,255,170,0.55); }
+
+/* Floating stars */
+.star-float {
+  position: fixed;
+  font-size: 1.6rem;
+  animation: floatUp 1.6s ease-out forwards;
+  pointer-events: none;
+  z-index: 400;
+}
+@keyframes floatUp { 0% { opacity: 1; transform: translateY(0) rotate(0) scale(1); } 100% { opacity: 0; transform: translateY(-220px) rotate(360deg) scale(0.5); } }
+
+/* Help modal */
+#help-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 600;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+#help-modal.show { opacity: 1; pointer-events: all; }
+.help-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 20px;
+  padding: 28px 32px;
+  max-width: 480px;
+  width: 90%;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.help-content h2 { font-family: var(--font-game); font-size: 1rem; color: #00d4ff; margin-bottom: 16px; letter-spacing: 2px; }
+.help-steps { display: flex; flex-direction: column; gap: 10px; }
+.help-step {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--bg-card2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem; color: var(--text-dim); line-height: 1.5;
+}
+.help-step-num { font-family: var(--font-game); font-size: 0.72rem; color: var(--accent-green); background: rgba(0,255,170,0.1); border-radius: 6px; padding: 2px 7px; flex-shrink: 0; margin-top: 2px; }
+.help-close {
+  margin-top: 18px; width: 100%;
+  background: transparent; border: 1px solid var(--border-glow); border-radius: 10px;
+  padding: 10px; color: var(--text-dim); cursor: pointer; font-family: var(--font-body); font-size: 0.85rem;
+  transition: var(--transition);
+}
+.help-close:hover { border-color: #00d4ff; color: #00d4ff; }
+
+/* Progress pulse on correct */
+@keyframes progressPulse { 0%{box-shadow:0 0 6px var(--proton-glow)} 50%{box-shadow:0 0 18px var(--proton-glow)} 100%{box-shadow:0 0 6px var(--proton-glow)} }
+.req-progress-fill.full { animation: progressPulse 1s ease-in-out infinite; }
+
+/* ANIMATIONS */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.45s ease-out; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: rgba(0,200,255,0.3); border-radius: 3px; }
+
+/* Drag ghost */
+.drag-ghost {
+  position: fixed; pointer-events: none; z-index: 999;
+  width: 42px; height: 42px; border-radius: 50%;
+  opacity: 0.88; transform: translate(-50%, -50%);
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  #app-header { padding: 8px 12px; }
+  #main-content { padding: 12px 8px; }
+  .panel { padding: 13px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="app-header">
+  <div class="logo">
+    ⚛ ATOM BUILDER 3D
+    <span id="logo-sub">ATOMIC EXPLORER — CLASS 7</span>
+  </div>
+  <div class="header-controls">
+    <div class="header-score">
+      <span id="score-label">SCORE</span>
+      <span id="score-display">0</span>
+    </div>
+    <div class="header-score">
+      <span id="level-label">LEVEL</span>
+      <span id="level-display">1/10</span>
+    </div>
+    <div class="header-score">
+      <span id="done-label">DONE</span>
+      <span id="done-display">0/10</span>
+    </div>
+    <button class="btn-sound" id="btn-sound" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+    <button class="btn-help" onclick="showHelp()">❓</button>
+    <button class="btn-lang" id="btn-lang" onclick="toggleLang()">বাংলা</button>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav id="nav-tabs">
+  <button class="tab-btn active" onclick="showSection('builder',this)"><span class="icon">⚛</span><span data-en="Atom Builder 3D" data-bn="পরমাণু নির্মাতা ৩D">Atom Builder 3D</span></button>
+  <button class="tab-btn" onclick="showSection('quiz',this)"><span class="icon">🧠</span><span data-en="Quiz Mode" data-bn="কুইজ মোড">Quiz Mode</span></button>
+  <button class="tab-btn" onclick="showSection('learn',this)"><span class="icon">📚</span><span data-en="Learn" data-bn="শেখো">Learn</span></button>
+</nav>
+
+<!-- MAIN -->
+<main id="main-content">
+
+  <!-- BUILDER -->
+  <section id="section-builder" class="active fade-in">
+    <div class="builder-layout">
+
+      <!-- LEFT: Levels -->
+      <div class="panel">
+        <div class="panel-title" data-en="Levels" data-bn="স্তরসমূহ">Levels</div>
+        <div class="level-list" id="level-list"></div>
+      </div>
+
+      <!-- CENTER: 3D Atom -->
+      <div>
+        <div class="panel" style="margin-bottom:12px;">
+          <div class="panel-title" data-en="Build Your Atom — 3D View" data-bn="তোমার পরমাণু তৈরি করো — ৩D দৃশ্য">Build Your Atom — 3D View</div>
+          <div id="atom-canvas-wrap"
+            ondragover="event.preventDefault(); document.getElementById('drop-overlay').classList.add('drag-over')"
+            ondragleave="document.getElementById('drop-overlay').classList.remove('drag-over')"
+            ondrop="dropToNucleus(event)">
+            <!-- Three.js canvas goes here -->
+            <div id="drop-overlay">
+              <span class="drop-hint" data-en="DROP PARTICLE" data-bn="কণা ছাড়ুন">DROP PARTICLE</span>
+            </div>
+            <div class="badge-3d">3D</div>
+          </div>
+          <p style="text-align:center; font-size:0.68rem; color:var(--text-dim); margin-top:8px; font-family:var(--font-game); letter-spacing:1px;">
+            🖱️ <span data-en="Drag to rotate · Scroll to zoom" data-bn="ঘোরাতে টানুন · জুম করতে স্ক্রোল করুন">Drag to rotate · Scroll to zoom</span>
+          </p>
+        </div>
+
+        <!-- Current counts -->
+        <div class="panel" style="margin-bottom:12px;">
+          <div class="panel-title" data-en="Current Build" data-bn="বর্তমান নির্মাণ">Current Build</div>
+          <div class="current-counts">
+            <div class="count-badge p-badge" id="badge-p">
+              <div class="cb-num" id="cur-p">0</div>
+              <span class="cb-label" data-en="Protons" data-bn="প্রোটন">Protons</span>
+            </div>
+            <div class="count-badge n-badge" id="badge-n">
+              <div class="cb-num" id="cur-n">0</div>
+              <span class="cb-label" data-en="Neutrons" data-bn="নিউট্রন">Neutrons</span>
+            </div>
+            <div class="count-badge e-badge" id="badge-e">
+              <div class="cb-num" id="cur-e">0</div>
+              <span class="cb-label" data-en="Electrons" data-bn="ইলেকট্রন">Electrons</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Element info -->
+        <div class="element-info-bar" id="element-info-bar">
+          <div class="eib-fact"><strong data-en="Mass Number" data-bn="ভর সংখ্যা">Mass Number</strong><span id="info-mass" style="color:#00d4ff;font-family:var(--font-game);">—</span></div>
+          <div class="eib-fact"><strong data-en="Shell Config" data-bn="শেল বিন্যাস">Shell Config</strong><span id="info-shells" style="color:var(--electron-col);font-family:var(--font-game);">—</span></div>
+          <div class="eib-fact"><strong data-en="Fun Fact" data-bn="মজার তথ্য">Fun Fact</strong><span id="info-fact" style="color:var(--text-dim);">—</span></div>
+        </div>
+
+        <!-- Hint bar -->
+        <div class="hint-bar" id="hint-bar">💡 <span id="hint-text"></span></div>
+      </div>
+
+      <!-- RIGHT: Particles + Target -->
+      <div>
+        <div class="panel" style="margin-bottom:12px;">
+          <div class="panel-title" data-en="Particles" data-bn="কণাসমূহ">Particles</div>
+          <div class="particle-tray">
+            <!-- Proton -->
+            <div class="tray-item">
+              <div class="tray-particle proton" draggable="true"
+                ondragstart="startDrag(event,'proton')"
+                onclick="showTooltip(event,'proton')"
+                ontouchstart="touchStart(event,'proton')"
+                ontouchmove="touchMove(event)"
+                ontouchend="touchEnd(event)">P⁺</div>
+              <div class="tray-info">
+                <strong data-en="Proton" data-bn="প্রোটন">Proton</strong>
+                <span data-en="Positive (+1) · In nucleus" data-bn="ধনাত্মক (+১) · নিউক্লিয়াসে">Positive (+1) · In nucleus</span>
+              </div>
+              <div class="tray-counter">
+                <button onclick="addParticle('proton')">+</button>
+                <span id="tray-p" style="min-width:20px;text-align:center;">0</span>
+                <button onclick="removeParticle('proton')">−</button>
+              </div>
+            </div>
+            <!-- Neutron -->
+            <div class="tray-item">
+              <div class="tray-particle neutron" draggable="true"
+                ondragstart="startDrag(event,'neutron')"
+                onclick="showTooltip(event,'neutron')"
+                ontouchstart="touchStart(event,'neutron')"
+                ontouchmove="touchMove(event)"
+                ontouchend="touchEnd(event)">N⁰</div>
+              <div class="tray-info">
+                <strong data-en="Neutron" data-bn="নিউট্রন">Neutron</strong>
+                <span data-en="Neutral (0) · In nucleus" data-bn="নিরপেক্ষ (০) · নিউক্লিয়াসে">Neutral (0) · In nucleus</span>
+              </div>
+              <div class="tray-counter">
+                <button onclick="addParticle('neutron')">+</button>
+                <span id="tray-n" style="min-width:20px;text-align:center;">0</span>
+                <button onclick="removeParticle('neutron')">−</button>
+              </div>
+            </div>
+            <!-- Electron -->
+            <div class="tray-item">
+              <div class="tray-particle electron" draggable="true"
+                ondragstart="startDrag(event,'electron')"
+                onclick="showTooltip(event,'electron')"
+                ontouchstart="touchStart(event,'electron')"
+                ontouchmove="touchMove(event)"
+                ontouchend="touchEnd(event)">e⁻</div>
+              <div class="tray-info">
+                <strong data-en="Electron" data-bn="ইলেকট্রন">Electron</strong>
+                <span data-en="Negative (−1) · In shells" data-bn="ঋণাত্মক (−১) · শেলে">Negative (−1) · In shells</span>
+              </div>
+              <div class="tray-counter">
+                <button onclick="addParticle('electron')">+</button>
+                <span id="tray-e" style="min-width:20px;text-align:center;">0</span>
+                <button onclick="removeParticle('electron')">−</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Target -->
+        <div class="panel">
+          <div class="panel-title" data-en="Target Atom" data-bn="লক্ষ্য পরমাণু">Target Atom</div>
+          <div id="target-panel">
+            <div id="target-sym" class="target-symbol"></div>
+            <div id="target-name" class="target-atom-name"></div>
+            <div id="target-category" class="target-category-badge"></div>
+            <div class="target-requirements" id="target-reqs"></div>
+            <button id="btn-check" onclick="checkAtom()">
+              <span data-en="✓ CHECK ATOM" data-bn="✓ পরমাণু যাচাই করো">✓ CHECK ATOM</span>
+            </button>
+            <button id="btn-reset" onclick="resetAtom()">
+              <span data-en="↺ Reset" data-bn="↺ রিসেট">↺ Reset</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="section-quiz" class="fade-in">
+    <div class="quiz-layout">
+      <div class="panel">
+        <div class="quiz-question-num" id="quiz-qnum">QUESTION 1 / 12</div>
+        <div class="quiz-question-text" id="quiz-question">Loading...</div>
+        <div class="quiz-options" id="quiz-options"></div>
+        <button class="quiz-nav-btn" id="quiz-next" onclick="nextQuestion()" style="display:none">
+          <span data-en="NEXT →" data-bn="পরবর্তী →">NEXT →</span>
+        </button>
+        <div id="quiz-explanation" style="display:none; margin-top:14px; padding:12px; background:rgba(0,200,255,0.06); border-radius:10px; font-size:0.8rem; color:var(--text-dim); line-height:1.6; border-left:3px solid #00d4ff;"></div>
+      </div>
+      <div>
+        <div class="panel quiz-score-panel">
+          <div class="panel-title" data-en="Quiz Score" data-bn="কুইজ স্কোর">Quiz Score</div>
+          <div class="score-big" id="quiz-score-disp">0</div>
+          <div style="font-size:0.72rem; color:var(--text-dim);" id="quiz-score-label">points</div>
+          <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quiz-prog" style="width:0%"></div></div>
+          <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:12px;" id="quiz-correct-count">0 correct</div>
+          <button class="quiz-nav-btn" style="width:100%; margin-top:0;" onclick="restartQuiz()">
+            <span data-en="↺ RESTART" data-bn="↺ পুনরায় শুরু">↺ RESTART</span>
+          </button>
+        </div>
+        <div class="panel" style="margin-top:12px;">
+          <div class="panel-title" data-en="Did You Know?" data-bn="তুমি কি জানো?">Did You Know?</div>
+          <div id="fun-fact" style="font-size:0.8rem; color:var(--text-dim); line-height:1.75;"></div>
+          <button onclick="updateFunFact(); playClick();" style="margin-top:10px; background:transparent; border:1px solid var(--border-glow); border-radius:8px; padding:6px 12px; color:var(--text-dim); cursor:pointer; font-size:0.72rem; width:100%; transition:var(--transition);" onmouseover="this.style.borderColor='#00d4ff';this.style.color='#00d4ff'" onmouseout="this.style.borderColor='';this.style.color=''">
+            <span data-en="🎲 New Fact" data-bn="🎲 নতুন তথ্য">🎲 New Fact</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section id="section-learn" class="fade-in">
+    <div class="learn-grid" style="margin-bottom:18px;">
+
+      <div class="learn-card proton-card">
+        <div class="lc-icon">P⁺</div>
+        <h3 data-en="PROTON" data-bn="প্রোটন">PROTON</h3>
+        <p data-en="A proton carries a positive charge and lives inside the nucleus. The number of protons tells us which element the atom is — it's the atom's identity!" data-bn="প্রোটন ধনাত্মক আধান বহন করে এবং নিউক্লিয়াসে থাকে। প্রোটনের সংখ্যা বলে কোন মৌল — এটাই পরমাণুর পরিচয়!">A proton carries a positive charge and lives inside the nucleus. The number of protons tells us which element the atom is — it's the atom's identity!</p>
+        <div class="learn-facts">
+          <div class="learn-fact"><span class="fact-icon">⚡</span><span data-en="Charge: +1 (positive)" data-bn="আধান: +১ (ধনাত্মক)">Charge: +1 (positive)</span></div>
+          <div class="learn-fact"><span class="fact-icon">⚖️</span><span data-en="Mass: ~1 atomic mass unit (amu)" data-bn="ভর: ~১ আণবিক ভর একক (amu)">Mass: ~1 atomic mass unit (amu)</span></div>
+          <div class="learn-fact"><span class="fact-icon">📍</span><span data-en="Location: Inside the nucleus" data-bn="অবস্থান: নিউক্লিয়াসের ভেতরে">Location: Inside the nucleus</span></div>
+          <div class="learn-fact"><span class="fact-icon">🔢</span><span data-en="Proton count = Atomic Number (Z)" data-bn="প্রোটন সংখ্যা = পারমাণবিক সংখ্যা (Z)">Proton count = Atomic Number (Z)</span></div>
+          <div class="learn-fact"><span class="fact-icon">🎨</span><span data-en="Symbol: p or p⁺" data-bn="প্রতীক: p অথবা p⁺">Symbol: p or p⁺</span></div>
+        </div>
+      </div>
+
+      <div class="learn-card neutron-card">
+        <div class="lc-icon">N⁰</div>
+        <h3 data-en="NEUTRON" data-bn="নিউট্রন">NEUTRON</h3>
+        <p data-en="Neutrons have no electric charge — they are neutral! They live in the nucleus beside protons and help hold the nucleus together with nuclear force." data-bn="নিউট্রনে কোনো বৈদ্যুতিক আধান নেই — এরা নিরপেক্ষ! এরা নিউক্লিয়াসে প্রোটনের পাশে থাকে এবং নিউক্লিয়ার বল দিয়ে নিউক্লিয়াস ধরে রাখতে সাহায্য করে।">Neutrons have no electric charge — they are neutral! They live in the nucleus beside protons and help hold the nucleus together with nuclear force.</p>
+        <div class="learn-facts">
+          <div class="learn-fact"><span class="fact-icon">⚡</span><span data-en="Charge: 0 (neutral)" data-bn="আধান: ০ (নিরপেক্ষ)">Charge: 0 (neutral)</span></div>
+          <div class="learn-fact"><span class="fact-icon">⚖️</span><span data-en="Mass: ~1 atomic mass unit (amu)" data-bn="ভর: ~১ আণবিক ভর একক (amu)">Mass: ~1 atomic mass unit (amu)</span></div>
+          <div class="learn-fact"><span class="fact-icon">📍</span><span data-en="Location: Inside the nucleus" data-bn="অবস্থান: নিউক্লিয়াসের ভেতরে">Location: Inside the nucleus</span></div>
+          <div class="learn-fact"><span class="fact-icon">🔢</span><span data-en="Neutrons = Mass Number − Atomic Number" data-bn="নিউট্রন = ভর সংখ্যা − পারমাণবিক সংখ্যা">Neutrons = Mass Number − Atomic Number</span></div>
+          <div class="learn-fact"><span class="fact-icon">🎨</span><span data-en="Symbol: n or n⁰" data-bn="প্রতীক: n অথবা n⁰">Symbol: n or n⁰</span></div>
+        </div>
+      </div>
+
+      <div class="learn-card electron-card">
+        <div class="lc-icon">e⁻</div>
+        <h3 data-en="ELECTRON" data-bn="ইলেকট্রন">ELECTRON</h3>
+        <p data-en="Electrons are tiny, negatively charged particles that orbit the nucleus in shells. They are responsible for chemical reactions and electricity!" data-bn="ইলেকট্রন ক্ষুদ্র, ঋণাত্মক আধানযুক্ত কণা যা নিউক্লিয়াসের চারদিকে শেলে ঘোরে। এরা রাসায়নিক বিক্রিয়া ও বিদ্যুতের জন্য দায়ী!">Electrons are tiny, negatively charged particles that orbit the nucleus in shells. They are responsible for chemical reactions and electricity!</p>
+        <div class="learn-facts">
+          <div class="learn-fact"><span class="fact-icon">⚡</span><span data-en="Charge: −1 (negative)" data-bn="আধান: −১ (ঋণাত্মক)">Charge: −1 (negative)</span></div>
+          <div class="learn-fact"><span class="fact-icon">⚖️</span><span data-en="Mass: almost zero (negligible)" data-bn="ভর: প্রায় শূন্য (নগণ্য)">Mass: almost zero (negligible)</span></div>
+          <div class="learn-fact"><span class="fact-icon">📍</span><span data-en="Location: Shells around the nucleus" data-bn="অবস্থান: নিউক্লিয়াসের চারপাশের শেলে">Location: Shells around the nucleus</span></div>
+          <div class="learn-fact"><span class="fact-icon">🏠</span><span data-en="Shell 1: max 2 · Shell 2: max 8 · Shell 3: max 8" data-bn="শেল ১: সর্বোচ্চ ২ · শেল ২: সর্বোচ্চ ৮ · শেল ৩: সর্বোচ্চ ৮">Shell 1: max 2 · Shell 2: max 8 · Shell 3: max 8</span></div>
+          <div class="learn-fact"><span class="fact-icon">🎨</span><span data-en="Symbol: e⁻" data-bn="প্রতীক: e⁻">Symbol: e⁻</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Atom table -->
+    <div class="panel">
+      <div class="panel-title" data-en="Element Reference Table" data-bn="মৌলের তথ্য সারণী">Element Reference Table</div>
+      <div style="overflow-x:auto;">
+        <table class="atom-table">
+          <thead>
+            <tr>
+              <th data-en="Element" data-bn="মৌল">Element</th>
+              <th data-en="Symbol" data-bn="প্রতীক">Symbol</th>
+              <th data-en="Z" data-bn="Z">Z</th>
+              <th data-en="Protons" data-bn="প্রোটন">Protons</th>
+              <th data-en="Neutrons" data-bn="নিউট্রন">Neutrons</th>
+              <th data-en="Electrons" data-bn="ইলেকট্রন">Electrons</th>
+              <th data-en="Shell Config" data-bn="শেল বিন্যাস">Shell Config</th>
+              <th data-en="Mass No." data-bn="ভর সংখ্যা">Mass No.</th>
+            </tr>
+          </thead>
+          <tbody id="learn-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Shell filling rule -->
+    <div class="panel" style="margin-top:14px;">
+      <div class="panel-title" data-en="Shell Filling Rules" data-bn="শেল পূরণের নিয়ম">Shell Filling Rules</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:10px;">
+        <div style="background:var(--bg-card2); border-radius:10px; padding:12px; text-align:center; border:1px solid rgba(255,233,77,0.2);">
+          <div style="font-family:var(--font-game);font-size:1.4rem;color:var(--electron-col);">K</div>
+          <div style="font-size:0.78rem;color:var(--text-dim);margin-top:4px;" data-en="1st Shell · Max 2 electrons" data-bn="১ম শেল · সর্বোচ্চ ২টি ইলেকট্রন">1st Shell · Max 2 electrons</div>
+        </div>
+        <div style="background:var(--bg-card2); border-radius:10px; padding:12px; text-align:center; border:1px solid rgba(255,233,77,0.2);">
+          <div style="font-family:var(--font-game);font-size:1.4rem;color:var(--electron-col);">L</div>
+          <div style="font-size:0.78rem;color:var(--text-dim);margin-top:4px;" data-en="2nd Shell · Max 8 electrons" data-bn="২য় শেল · সর্বোচ্চ ৮টি ইলেকট্রন">2nd Shell · Max 8 electrons</div>
+        </div>
+        <div style="background:var(--bg-card2); border-radius:10px; padding:12px; text-align:center; border:1px solid rgba(255,233,77,0.2);">
+          <div style="font-family:var(--font-game);font-size:1.4rem;color:var(--electron-col);">M</div>
+          <div style="font-size:0.78rem;color:var(--text-dim);margin-top:4px;" data-en="3rd Shell · Max 8 electrons (for Z≤20)" data-bn="৩য় শেল · সর্বোচ্চ ৮টি ইলেকট্রন (Z≤20 এর জন্য)">3rd Shell · Max 8 electrons (for Z≤20)</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; font-size:0.8rem; color:var(--text-dim); line-height:1.7; background:rgba(0,200,255,0.05); border-radius:10px; padding:12px; border:1px solid rgba(0,200,255,0.1);">
+        💡 <span data-en="Rule: Fill inner shells first. Shell 1 fills up to 2, then Shell 2 fills up to 8, then Shell 3. For a neutral atom, number of electrons = number of protons." data-bn="নিয়ম: প্রথমে ভেতরের শেল পূরণ করো। শেল ১-এ সর্বোচ্চ ২, তারপর শেল ২-তে সর্বোচ্চ ৮, তারপর শেল ৩। নিরপেক্ষ পরমাণুতে ইলেকট্রন সংখ্যা = প্রোটন সংখ্যা।">Rule: Fill inner shells first. Shell 1 fills up to 2, then Shell 2 fills up to 8, then Shell 3. For a neutral atom, number of electrons = number of protons.</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Particle tooltip -->
+<div id="particle-tooltip">
+  <div class="tip-title" id="tip-title"></div>
+  <div class="tip-text" id="tip-text"></div>
+</div>
+
+<!-- Feedback toast -->
+<div id="feedback-toast">
+  <span id="toast-icon">🎉</span>
+  <div>
+    <div id="toast-msg"></div>
+    <div id="toast-sub"></div>
+  </div>
+</div>
+
+<!-- Celebration overlay -->
+<div id="celebration">
+  <div class="celeb-content">
+    <div class="celeb-emoji" id="celeb-emoji">🎉</div>
+    <div class="celeb-element" id="celeb-element"></div>
+    <div class="celeb-title" id="celeb-title">PERFECT ATOM!</div>
+    <div class="celeb-sub" id="celeb-sub"></div>
+    <button class="celeb-btn" id="celeb-btn">NEXT LEVEL →</button>
+  </div>
+</div>
+
+<!-- Help modal -->
+<div id="help-modal">
+  <div class="help-content">
+    <h2 data-en="⚛ HOW TO PLAY" data-bn="⚛ কিভাবে খেলতে হবে">⚛ HOW TO PLAY</h2>
+    <div class="help-steps">
+      <div class="help-step"><span class="help-step-num">01</span><span data-en="Select a level from the left panel. Each level is a different element to build." data-bn="বাম প্যানেল থেকে একটি স্তর বেছে নাও। প্রতিটি স্তরে একটি আলাদা মৌল তৈরি করতে হবে।">Select a level from the left panel. Each level is a different element to build.</span></div>
+      <div class="help-step"><span class="help-step-num">02</span><span data-en="Look at the Target Atom panel to see how many Protons, Neutrons, and Electrons you need." data-bn="লক্ষ্য পরমাণু প্যানেলে দেখো কতটি প্রোটন, নিউট্রন, ও ইলেকট্রন দরকার।">Look at the Target Atom panel to see how many Protons, Neutrons, and Electrons you need.</span></div>
+      <div class="help-step"><span class="help-step-num">03</span><span data-en="Click + to add particles. The 3D atom updates live in real time!" data-bn="+ বোতামে ক্লিক করে কণা যোগ করো। ৩D পরমাণু তাৎক্ষণিকভাবে আপডেট হবে!">Click + to add particles. The 3D atom updates live in real time!</span></div>
+      <div class="help-step"><span class="help-step-num">04</span><span data-en="When ready, click CHECK ATOM. If correct, you win points and unlock the next level!" data-bn="প্রস্তুত হলে CHECK ATOM বোতামে ক্লিক করো। সঠিক হলে পয়েন্ট পাবে ও পরের স্তর খুলবে!">When ready, click CHECK ATOM. If correct, you win points and unlock the next level!</span></div>
+      <div class="help-step"><span class="help-step-num">05</span><span data-en="Drag & drop particles onto the 3D atom, or use the + / − buttons in the tray." data-bn="৩D পরমাণুতে কণা টেনে ছাড়ো, অথবা ট্রেতে + / − বোতাম ব্যবহার করো।">Drag & drop particles onto the 3D atom, or use the + / − buttons in the tray.</span></div>
+      <div class="help-step"><span class="help-step-num">06</span><span data-en="Drag the 3D atom to rotate it and scroll to zoom in/out!" data-bn="৩D পরমাণু ঘোরাতে টানো এবং জুম করতে স্ক্রোল করো!">Drag the 3D atom to rotate it and scroll to zoom in/out!</span></div>
+    </div>
+    <button class="help-close" onclick="closeHelp()">✕ <span data-en="Close" data-bn="বন্ধ করো">Close</span></button>
+  </div>
+</div>
+
+<!-- Drag ghost -->
+<div id="drag-ghost" class="drag-ghost"></div>
+
+<script>
+/* ================================================================
+   DATA
+   ================================================================ */
+const ELEMENTS = [
+  { name:'Hydrogen',  nameBn:'হাইড্রোজেন',  sym:'H',  Z:1,  N:0,  shells:[1],   category:'Non-metal', categoryBn:'অধাতু',   funFact_en:'The lightest element in the universe!', funFact_bn:'মহাবিশ্বের সবচেয়ে হালকা মৌল!' },
+  { name:'Helium',    nameBn:'হিলিয়াম',     sym:'He', Z:2,  N:2,  shells:[2],   category:'Noble Gas',  categoryBn:'নিষ্ক্রিয় গ্যাস', funFact_en:'Used to fill balloons — it makes your voice squeaky!', funFact_bn:'বেলুনে ভরা হয় — এটা কণ্ঠস্বর সরু করে!' },
+  { name:'Lithium',   nameBn:'লিথিয়াম',    sym:'Li', Z:3,  N:4,  shells:[2,1], category:'Metal',     categoryBn:'ধাতু',   funFact_en:'Used in phone batteries!', funFact_bn:'ফোনের ব্যাটারিতে ব্যবহৃত হয়!' },
+  { name:'Beryllium', nameBn:'বেরিলিয়াম',  sym:'Be', Z:4,  N:5,  shells:[2,2], category:'Metal',     categoryBn:'ধাতু',   funFact_en:'Found in emerald gemstones!', funFact_bn:'পান্না পাথরে পাওয়া যায়!' },
+  { name:'Boron',     nameBn:'বোরন',        sym:'B',  Z:5,  N:6,  shells:[2,3], category:'Metalloid', categoryBn:'অর্ধধাতু', funFact_en:'Used in bulletproof vests!', funFact_bn:'বুলেটপ্রুফ জ্যাকেটে ব্যবহৃত হয়!' },
+  { name:'Carbon',    nameBn:'কার্বন',      sym:'C',  Z:6,  N:6,  shells:[2,4], category:'Non-metal', categoryBn:'অধাতু',   funFact_en:'Basis of all life on Earth! Also forms diamonds.', funFact_bn:'পৃথিবীর সব জীবনের ভিত্তি! হীরাও কার্বন দিয়ে তৈরি।' },
+  { name:'Nitrogen',  nameBn:'নাইট্রোজেন', sym:'N',  Z:7,  N:7,  shells:[2,5], category:'Non-metal', categoryBn:'অধাতু',   funFact_en:'Makes up 78% of the air we breathe!', funFact_bn:'আমরা যে বায়ু শ্বাস নিই তার ৭৮% নাইট্রোজেন!' },
+  { name:'Oxygen',    nameBn:'অক্সিজেন',   sym:'O',  Z:8,  N:8,  shells:[2,6], category:'Non-metal', categoryBn:'অধাতু',   funFact_en:'Essential for breathing and burning!', funFact_bn:'শ্বাস নেওয়া ও জ্বলার জন্য অপরিহার্য!' },
+  { name:'Fluorine',  nameBn:'ফ্লোরিন',    sym:'F',  Z:9,  N:10, shells:[2,7], category:'Non-metal', categoryBn:'অধাতু',   funFact_en:'Found in toothpaste to protect teeth!', funFact_bn:'দাঁত রক্ষার জন্য টুথপেস্টে থাকে!' },
+  { name:'Neon',      nameBn:'নিয়ন',       sym:'Ne', Z:10, N:10, shells:[2,8], category:'Noble Gas',  categoryBn:'নিষ্ক্রিয় গ্যাস', funFact_en:'Used in bright glowing signs!', funFact_bn:'উজ্জ্বল গ্লোয়িং সাইনে ব্যবহৃত হয়!' },
+];
+
+const QUIZ_QUESTIONS = [
+  { q_en:'What is the charge of a proton?', q_bn:'প্রোটনের আধান কত?', options_en:['Positive (+1)','Negative (−1)','Neutral (0)','No charge'], options_bn:['ধনাত্মক (+১)','ঋণাত্মক (−১)','নিরপেক্ষ (০)','কোনো আধান নেই'], correct:0, explain_en:'Protons carry a positive charge of +1. They are found in the nucleus of an atom.', explain_bn:'প্রোটনে +১ ধনাত্মক আধান থাকে। এগুলো পরমাণুর নিউক্লিয়াসে থাকে।' },
+  { q_en:'Where are electrons located in an atom?', q_bn:'পরমাণুতে ইলেকট্রন কোথায় থাকে?', options_en:['Inside the nucleus','In shells around the nucleus','Outside the atom','Anywhere randomly'], options_bn:['নিউক্লিয়াসের ভেতরে','নিউক্লিয়াসের চারপাশের শেলে','পরমাণুর বাইরে','যেকোনো জায়গায়'], correct:1, explain_en:'Electrons orbit the nucleus in specific energy levels called shells.', explain_bn:'ইলেকট্রন নির্দিষ্ট শক্তি স্তরে (শেল) নিউক্লিয়াসের চারদিকে ঘোরে।' },
+  { q_en:'What is the atomic number of Carbon?', q_bn:'কার্বনের পারমাণবিক সংখ্যা কত?', options_en:['4','5','6','7'], options_bn:['৪','৫','৬','৭'], correct:2, explain_en:'Carbon has 6 protons, so its atomic number (Z) is 6. Symbol: C.', explain_bn:'কার্বনে ৬টি প্রোটন আছে, তাই পারমাণবিক সংখ্যা ৬। প্রতীক: C।' },
+  { q_en:'Which particle has NO electric charge?', q_bn:'কোন কণার কোনো বৈদ্যুতিক আধান নেই?', options_en:['Proton','Electron','Neutron','Ion'], options_bn:['প্রোটন','ইলেকট্রন','নিউট্রন','আয়ন'], correct:2, explain_en:'Neutrons are electrically neutral — they carry no charge.', explain_bn:'নিউট্রন বৈদ্যুতিকভাবে নিরপেক্ষ — কোনো আধান নেই।' },
+  { q_en:'How many electrons can the first shell (K shell) hold?', q_bn:'প্রথম শেল (K শেল)-এ সর্বোচ্চ কতটি ইলেকট্রন থাকতে পারে?', options_en:['2','8','18','4'], options_bn:['২','৮','১৮','৪'], correct:0, explain_en:'The first electron shell (K shell) can hold a maximum of 2 electrons.', explain_bn:'প্রথম ইলেকট্রন শেল (K শেল) সর্বোচ্চ ২টি ইলেকট্রন ধারণ করতে পারে।' },
+  { q_en:"What is Helium's electron configuration?", q_bn:'হিলিয়ামের ইলেকট্রন বিন্যাস কী?', options_en:['1','2','2,1','2,2'], options_bn:['১','২','২,১','২,২'], correct:1, explain_en:'Helium (He) has 2 electrons, both in the first shell. Configuration: 2.', explain_bn:'হিলিয়ামে ২টি ইলেকট্রন, উভয়ই প্রথম শেলে। বিন্যাস: ২।' },
+  { q_en:'Which element has atomic number 8?', q_bn:'কোন মৌলের পারমাণবিক সংখ্যা ৮?', options_en:['Nitrogen','Fluorine','Oxygen','Neon'], options_bn:['নাইট্রোজেন','ফ্লোরিন','অক্সিজেন','নিয়ন'], correct:2, explain_en:'Oxygen (O) has 8 protons, so its atomic number is 8.', explain_bn:'অক্সিজেনে ৮টি প্রোটন আছে, তাই পারমাণবিক সংখ্যা ৮।' },
+  { q_en:'What is the mass number of an atom?', q_bn:'পরমাণুর ভর সংখ্যা কী?', options_en:['Only protons','Only neutrons','Protons + Neutrons','Protons + Electrons'], options_bn:['শুধু প্রোটন','শুধু নিউট্রন','প্রোটন + নিউট্রন','প্রোটন + ইলেকট্রন'], correct:2, explain_en:'Mass Number (A) = Protons + Neutrons. Electrons have negligible mass.', explain_bn:'ভর সংখ্যা (A) = প্রোটন + নিউট্রন। ইলেকট্রনের ভর নগণ্য।' },
+  { q_en:'Which subatomic particle is responsible for chemical bonding?', q_bn:'কোন উপ-পারমাণবিক কণা রাসায়নিক বন্ধনের জন্য দায়ী?', options_en:['Protons','Neutrons','Electrons','Nucleus'], options_bn:['প্রোটন','নিউট্রন','ইলেকট্রন','নিউক্লিয়াস'], correct:2, explain_en:'Valence electrons (outermost shell electrons) participate in chemical bonding.', explain_bn:'যোজ্যতা ইলেকট্রন (বাইরের শেলের ইলেকট্রন) রাসায়নিক বন্ধনে অংশ নেয়।' },
+  { q_en:'Lithium has 3 protons. What is its electron configuration?', q_bn:'লিথিয়ামে ৩টি প্রোটন আছে। ইলেকট্রন বিন্যাস কী?', options_en:['3','2,1','1,2','2,2'], options_bn:['৩','২,১','১,২','২,২'], correct:1, explain_en:'Lithium: 2 electrons in shell 1, 1 in shell 2 → configuration: 2,1.', explain_bn:'লিথিয়াম: শেল ১-এ ২টি, শেল ২-তে ১টি → বিন্যাস: ২,১।' },
+  { q_en:'Where do protons and neutrons both live?', q_bn:'প্রোটন ও নিউট্রন উভয়ই কোথায় থাকে?', options_en:['In the shells','In the nucleus','Outside the atom','In orbit'], options_bn:['শেলে','নিউক্লিয়াসে','পরমাণুর বাইরে','কক্ষপথে'], correct:1, explain_en:'Both protons and neutrons are found in the nucleus at the center of the atom.', explain_bn:'প্রোটন ও নিউট্রন উভয়ই পরমাণুর কেন্দ্রে নিউক্লিয়াসে থাকে।' },
+  { q_en:'How many electrons does Oxygen have?', q_bn:'অক্সিজেনে কতটি ইলেকট্রন আছে?', options_en:['6','7','8','9'], options_bn:['৬','৭','৮','৯'], correct:2, explain_en:'Oxygen has atomic number 8, so it has 8 protons and 8 electrons (neutral atom).', explain_bn:'অক্সিজেনের পারমাণবিক সংখ্যা ৮, তাই ৮টি প্রোটন ও ৮টি ইলেকট্রন আছে।' },
+];
+
+const FUN_FACTS = [
+  { en:'⚛️ An atom is mostly empty space! If the nucleus were a football, electrons would orbit kilometers away.', bn:'⚛️ পরমাণু বেশিরভাগই ফাঁকা! নিউক্লিয়াস ফুটবলের আকারের হলে, ইলেকট্রন কিলোমিটার দূরে ঘুরত।' },
+  { en:'🌟 Everything you can touch is made of atoms — including YOU!', bn:'🌟 তুমি যা ছুঁতে পারো সবকিছুই পরমাণু দিয়ে তৈরি — এমনকি তুমি নিজেও!' },
+  { en:'🔬 "Atom" comes from Greek "atomos" meaning "indivisible."', bn:'🔬 "atom" শব্দটি গ্রিক "atomos" থেকে এসেছে — অর্থ "অবিভাজ্য"।' },
+  { en:'💡 Electrons move incredibly fast — nearly the speed of light!', bn:'💡 ইলেকট্রন অবিশ্বাস্য দ্রুত চলে — প্রায় আলোর গতিতে!' },
+  { en:'🌌 Carbon atoms in your body were made inside ancient stars billions of years ago!', bn:'🌌 তোমার শরীরের কার্বন পরমাণু কোটি বছর আগে প্রাচীন নক্ষত্রের ভেতরে তৈরি হয়েছিল!' },
+  { en:'💎 Diamond and graphite (pencil lead) are both made of carbon atoms arranged differently!', bn:'💎 হীরা ও গ্রাফাইট (পেন্সিলের শিস) — উভয়ই কার্বন পরমাণু থেকে তৈরি, শুধু বিন্যাস আলাদা!' },
+  { en:'🌊 A single drop of water contains about 1.67 sextillion water molecules!', bn:'🌊 এক ফোঁটা পানিতে প্রায় ১৬.৭ × ১০²⁰টি পানির অণু থাকে!' },
+  { en:'🔋 Lithium powers your phone battery. Li is element number 3!', bn:'🔋 লিথিয়াম তোমার ফোনের ব্যাটারি চালায়। Li হলো ৩ নম্বর মৌল!' },
+];
+
+const TOOLTIP_DATA = {
+  proton:   { title_en:'⚡ PROTON (P⁺)',    title_bn:'⚡ প্রোটন (P⁺)',   text_en:'Positive charge (+1). Lives in the nucleus. Number of protons = atomic number!', text_bn:'ধনাত্মক আধান (+১)। নিউক্লিয়াসে থাকে। প্রোটন সংখ্যা = পারমাণবিক সংখ্যা!' },
+  neutron:  { title_en:'🌀 NEUTRON (N⁰)',   title_bn:'🌀 নিউট্রন (N⁰)',  text_en:"No charge (neutral). Lives in the nucleus. Adds to the atom's mass!", text_bn:'কোনো আধান নেই (নিরপেক্ষ)। নিউক্লিয়াসে থাকে। পরমাণুর ভর বাড়ায়!' },
+  electron: { title_en:'⚡ ELECTRON (e⁻)', title_bn:'⚡ ইলেকট্রন (e⁻)', text_en:'Negative charge (−1). Orbits nucleus in shells. Makes chemistry happen!', text_bn:'ঋণাত্মক আধান (−১)। শেলে নিউক্লিয়াসের চারদিকে ঘোরে। রসায়ন ঘটায়!' },
+};
+
+/* ================================================================
+   STATE
+   ================================================================ */
+let lang = 'en';
+let soundOn = true;
+let score = 0;
+let currentLevel = 0;
+let completedLevels = new Set();
+let build = { p:0, n:0, e:0 };
+let dragType = null;
+let quizIndex = 0;
+let quizScore = 0;
+let quizCorrect = 0;
+let quizAnswered = false;
+let touchDragType = null;
+
+/* ================================================================
+   AUDIO
+   ================================================================ */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudioCtx() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+function playTone(freq, type, dur, vol=0.28) {
+  if (!soundOn) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+function playSuccess() {
+  playTone(523,'sine',0.14);
+  setTimeout(()=>playTone(659,'sine',0.14),150);
+  setTimeout(()=>playTone(784,'sine',0.28),300);
+  setTimeout(()=>playTone(1046,'sine',0.28),480);
+}
+function playError()  { playTone(200,'sawtooth',0.3,0.15); }
+function playClick()  { playTone(800,'sine',0.07,0.18); }
+function playDrop()   { playTone(440,'triangle',0.1,0.22); }
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('btn-sound').textContent = soundOn ? '🔊' : '🔇';
+}
+
+/* ================================================================
+   LANGUAGE
+   ================================================================ */
+function toggleLang() {
+  lang = lang === 'en' ? 'bn' : 'en';
+  document.body.classList.toggle('bangla', lang === 'bn');
+  document.getElementById('btn-lang').textContent = lang === 'en' ? 'বাংলা' : 'English';
+  document.querySelectorAll('[data-en]').forEach(el => {
+    const val = el.getAttribute('data-' + lang);
+    if (val !== null) el.textContent = val;
+  });
+  initLevels(); renderTarget(); renderLearnTable(); updateFunFact(); playClick();
+  if (quizIndex < QUIZ_QUESTIONS.length) renderQuestion();
+}
+
+/* ================================================================
+   SECTIONS
+   ================================================================ */
+function showSection(name, btn) {
+  document.querySelectorAll('#main-content section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  playClick();
+  if (name === 'learn') renderLearnTable();
+  if (name === 'quiz') updateFunFact();
+}
+
+/* ================================================================
+   HELP
+   ================================================================ */
+function showHelp() { document.getElementById('help-modal').classList.add('show'); }
+function closeHelp() { document.getElementById('help-modal').classList.remove('show'); }
+document.getElementById('help-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('help-modal')) closeHelp();
+});
+
+/* ================================================================
+   LEVELS
+   ================================================================ */
+function initLevels() {
+  const list = document.getElementById('level-list');
+  list.innerHTML = '';
+  ELEMENTS.forEach((el, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'level-btn' + (i === currentLevel ? ' active' : '') + (completedLevels.has(i) ? ' completed' : '');
+    btn.onclick = () => selectLevel(i);
+    btn.innerHTML = `
+      <span class="lv-num">LV ${i+1}</span>
+      <span class="lv-name">${lang === 'en' ? el.name : el.nameBn}</span>
+      <span class="lv-sym">${el.sym}</span>
+      ${completedLevels.has(i) ? '<span class="lv-check">✓</span>' : ''}
+    `;
+    list.appendChild(btn);
+  });
+  document.getElementById('done-display').textContent = `${completedLevels.size}/${ELEMENTS.length}`;
+}
+
+function selectLevel(idx) {
+  currentLevel = idx;
+  resetAtom(true);
+  initLevels();
+  renderTarget();
+  updateElementInfo();
+  rebuild3DAtom();
+  playClick();
+}
+
+/* ================================================================
+   ELEMENT INFO
+   ================================================================ */
+function updateElementInfo() {
+  const el = ELEMENTS[currentLevel];
+  const mass = el.Z + el.N;
+  const shellStr = el.shells.join(', ');
+  document.getElementById('info-mass').textContent = mass;
+  document.getElementById('info-shells').textContent = shellStr;
+  document.getElementById('info-fact').textContent = lang === 'en' ? el.funFact_en : el.funFact_bn;
+}
+
+/* ================================================================
+   TARGET PANEL
+   ================================================================ */
+function renderTarget() {
+  const el = ELEMENTS[currentLevel];
+  const totalE = el.shells.reduce((a,b)=>a+b,0);
+  const mass = el.Z + el.N;
+  document.getElementById('target-sym').innerHTML = `<sup>${mass}</sup>${el.sym}<sub>${el.Z}</sub>`;
+  document.getElementById('target-name').textContent = lang === 'en' ? el.name : el.nameBn;
+  document.getElementById('target-category').textContent = lang === 'en' ? el.category : el.categoryBn;
+
+  const reqs = document.getElementById('target-reqs');
+  const pPct = Math.min(100, build.p/el.Z*100);
+  const nPct = el.N > 0 ? Math.min(100, build.n/el.N*100) : (build.n===0?100:50);
+  const ePct = Math.min(100, build.e/totalE*100);
+
+  reqs.innerHTML = `
+    <div class="req-row">
+      <span class="req-label">${lang==='en'?'Protons':'প্রোটন'}</span>
+      <span class="req-val proton">${build.p} / ${el.Z}</span>
+    </div>
+    <div class="req-progress"><div class="req-progress-fill proton${pPct>=100?' full':''}" style="width:${pPct}%"></div></div>
+    <div class="req-row" style="margin-top:6px;">
+      <span class="req-label">${lang==='en'?'Neutrons':'নিউট্রন'}</span>
+      <span class="req-val neutron">${build.n} / ${el.N}</span>
+    </div>
+    <div class="req-progress"><div class="req-progress-fill neutron${nPct>=100?' full':''}" style="width:${nPct}%"></div></div>
+    <div class="req-row" style="margin-top:6px;">
+      <span class="req-label">${lang==='en'?'Electrons':'ইলেকট্রন'}</span>
+      <span class="req-val electron">${build.e} / ${totalE}</span>
+    </div>
+    <div class="req-progress"><div class="req-progress-fill electron${ePct>=100?' full':''}" style="width:${ePct}%"></div></div>
+  `;
+  document.getElementById('level-display').textContent = `${currentLevel+1}/${ELEMENTS.length}`;
+
+  const el2 = ELEMENTS[currentLevel];
+  const allOk = build.p===el2.Z && build.n===el2.N && build.e===totalE;
+  document.getElementById('atom-canvas-wrap').classList.toggle('ready', allOk);
+}
+
+/* ================================================================
+   BUILD DISPLAY
+   ================================================================ */
+function updateBuildDisplay() {
+  document.getElementById('cur-p').textContent = build.p;
+  document.getElementById('cur-n').textContent = build.n;
+  document.getElementById('cur-e').textContent = build.e;
+  document.getElementById('tray-p').textContent = build.p;
+  document.getElementById('tray-n').textContent = build.n;
+  document.getElementById('tray-e').textContent = build.e;
+  document.getElementById('score-display').textContent = score;
+  renderTarget();
+  rebuild3DAtom();
+}
+
+/* ================================================================
+   PARTICLE ADD/REMOVE
+   ================================================================ */
+function addParticle(type) {
+  if (type === 'proton')   build.p++;
+  if (type === 'neutron')  build.n++;
+  if (type === 'electron') build.e++;
+  playClick();
+  document.getElementById('hint-bar').classList.remove('show');
+  updateBuildDisplay();
+}
+function removeParticle(type) {
+  if (type === 'proton'   && build.p > 0) build.p--;
+  if (type === 'neutron'  && build.n > 0) build.n--;
+  if (type === 'electron' && build.e > 0) build.e--;
+  playClick();
+  updateBuildDisplay();
+}
+
+/* ================================================================
+   DRAG & DROP
+   ================================================================ */
+function startDrag(e, type) {
+  dragType = type;
+  e.dataTransfer.setData('text/plain', type);
+  const ghost = document.getElementById('drag-ghost');
+  ghost.className = 'drag-ghost ' + type;
+  ghost.style.background = type==='proton'
+    ? 'radial-gradient(circle at 35% 35%, #ff8fa3, #ff4d6d)'
+    : type==='neutron'
+    ? 'radial-gradient(circle at 35% 35%, #66e8ff, #00d4ff)'
+    : 'radial-gradient(circle at 35% 35%, #fff5a0, #ffe94d)';
+  ghost.style.display = 'block';
+  e.dataTransfer.setDragImage(ghost, 21, 21);
+}
+function dropToNucleus(e) {
+  e.preventDefault();
+  document.getElementById('drop-overlay').classList.remove('drag-over');
+  const type = e.dataTransfer.getData('text/plain') || dragType;
+  if (!type) return;
+  if (type === 'proton')   build.p++;
+  if (type === 'neutron')  build.n++;
+  if (type === 'electron') build.e++;
+  playDrop();
+  document.getElementById('hint-bar').classList.remove('show');
+  updateBuildDisplay();
+  dragType = null;
+}
+
+/* Touch drag */
+function touchStart(e, type) { touchDragType = type; }
+function touchMove(e) { e.preventDefault(); }
+function touchEnd(e) {
+  if (!touchDragType) return;
+  const t = e.changedTouches[0];
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const wrap = document.getElementById('atom-canvas-wrap');
+  if (wrap && (wrap === el || wrap.contains(el))) {
+    if (touchDragType === 'proton')   build.p++;
+    if (touchDragType === 'neutron')  build.n++;
+    if (touchDragType === 'electron') build.e++;
+    playDrop();
+    document.getElementById('hint-bar').classList.remove('show');
+    updateBuildDisplay();
+  }
+  touchDragType = null;
+}
+
+/* ================================================================
+   CHECK ATOM
+   ================================================================ */
+function checkAtom() {
+  const el = ELEMENTS[currentLevel];
+  const totalE = el.shells.reduce((a,b)=>a+b,0);
+  const pOk = build.p === el.Z;
+  const nOk = build.n === el.N;
+  const eOk = build.e === totalE;
+  playClick();
+  if (pOk && nOk && eOk) {
+    const pts = 100 + 10*(currentLevel+1);
+    score += pts;
+    completedLevels.add(currentLevel);
+    playSuccess();
+    updateBuildDisplay();
+    initLevels();
+    setTimeout(() => { showCelebration(); spawnStars(); }, 200);
+  } else {
+    playError();
+    const hints = [];
+    if (!pOk) hints.push(lang==='en'?`Need ${el.Z} proton(s), have ${build.p}`:`${el.Z}টি প্রোটন দরকার, আছে ${build.p}টি`);
+    if (!nOk) hints.push(lang==='en'?`Need ${el.N} neutron(s), have ${build.n}`:`${el.N}টি নিউট্রন দরকার, আছে ${build.n}টি`);
+    if (!eOk) hints.push(lang==='en'?`Need ${totalE} electron(s), have ${build.e}`:`${totalE}টি ইলেকট্রন দরকার, আছে ${build.e}টি`);
+    const hintBar = document.getElementById('hint-bar');
+    document.getElementById('hint-text').textContent = hints.join(' · ');
+    hintBar.classList.add('show');
+    showToast('error','❌', lang==='en'?'Not quite!':'ঠিক হয়নি!', hints.join(' | '));
+  }
+}
+
+function resetAtom(silent=false) {
+  build = {p:0, n:0, e:0};
+  if (!silent) playClick();
+  document.getElementById('hint-bar').classList.remove('show');
+  document.getElementById('atom-canvas-wrap').classList.remove('ready');
+  updateBuildDisplay();
+}
+
+/* ================================================================
+   TOAST
+   ================================================================ */
+let toastTimer = null;
+function showToast(type, icon, msg, sub) {
+  const toast = document.getElementById('feedback-toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-sub').textContent = sub || '';
+  toast.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.className = ''; }, 4000);
+}
+
+/* ================================================================
+   CELEBRATION
+   ================================================================ */
+function showCelebration() {
+  const el = ELEMENTS[currentLevel];
+  const pts = 100 + 10*(currentLevel+1);
+  const emojis = ['🎉','🌟','⭐','🏆','💥','🚀','✨','🎊','🔥','💫'];
+  document.getElementById('celeb-emoji').textContent = emojis[currentLevel] || '🎉';
+  document.getElementById('celeb-element').textContent = lang==='en' ? `${el.name} (${el.sym}) built!` : `${el.nameBn} (${el.sym}) তৈরি সম্পন্ন!`;
+  document.getElementById('celeb-title').textContent = lang==='en' ? 'PERFECT ATOM!' : 'নিখুঁত পরমাণু!';
+  document.getElementById('celeb-sub').textContent = lang==='en'
+    ? `+${pts} points! Total: ${score}`
+    : `+${pts} পয়েন্ট! মোট: ${score}`;
+  const nextBtn = document.getElementById('celeb-btn');
+  if (currentLevel < ELEMENTS.length - 1) {
+    nextBtn.textContent = lang==='en' ? 'NEXT LEVEL →' : 'পরের স্তর →';
+    nextBtn.onclick = () => { closeCelebration(); selectLevel(currentLevel + 1); };
+  } else {
+    nextBtn.textContent = lang==='en' ? '🏆 ALL DONE!' : '🏆 সব সম্পন্ন!';
+    nextBtn.onclick = closeCelebration;
+  }
+  document.getElementById('celebration').classList.add('show');
+}
+function closeCelebration() {
+  document.getElementById('celebration').classList.remove('show');
+}
+function spawnStars() {
+  const emojis = ['⭐','🌟','✨','💫','🎉','🏆','⚛'];
+  for (let i = 0; i < 14; i++) {
+    setTimeout(() => {
+      const star = document.createElement('div');
+      star.className = 'star-float';
+      star.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      star.style.left = (15 + Math.random() * 70) + 'vw';
+      star.style.top  = (20 + Math.random() * 55) + 'vh';
+      star.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
+      document.body.appendChild(star);
+      setTimeout(() => star.remove(), 1800);
+    }, i * 90);
+  }
+}
+
+/* ================================================================
+   TOOLTIP
+   ================================================================ */
+let tipTimer = null;
+function showTooltip(e, type) {
+  const tip = document.getElementById('particle-tooltip');
+  const data = TOOLTIP_DATA[type];
+  document.getElementById('tip-title').textContent = lang==='en' ? data.title_en : data.title_bn;
+  document.getElementById('tip-text').textContent  = lang==='en' ? data.text_en  : data.text_bn;
+  const x = Math.min(e.clientX + 14, window.innerWidth - 240);
+  const y = Math.max(e.clientY - 20, 10);
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+  tip.classList.add('visible');
+  clearTimeout(tipTimer);
+  tipTimer = setTimeout(() => tip.classList.remove('visible'), 3200);
+}
+document.addEventListener('click', e => {
+  if (!e.target.classList.contains('tray-particle'))
+    document.getElementById('particle-tooltip').classList.remove('visible');
+});
+
+/* ================================================================
+   QUIZ
+   ================================================================ */
+function initQuiz() {
+  quizIndex = 0; quizScore = 0; quizCorrect = 0; quizAnswered = false;
+  renderQuestion();
+}
+function renderQuestion() {
+  if (quizIndex >= QUIZ_QUESTIONS.length) return;
+  const q = QUIZ_QUESTIONS[quizIndex];
+  document.getElementById('quiz-qnum').textContent = `QUESTION ${quizIndex+1} / ${QUIZ_QUESTIONS.length}`;
+  document.getElementById('quiz-question').textContent = lang==='en' ? q.q_en : q.q_bn;
+  document.getElementById('quiz-prog').style.width = (quizIndex / QUIZ_QUESTIONS.length * 100) + '%';
+  const opts = document.getElementById('quiz-options');
+  opts.innerHTML = '';
+  const labels = ['A','B','C','D'];
+  const options = lang==='en' ? q.options_en : q.options_bn;
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-opt';
+    btn.innerHTML = `<span class="opt-letter">${labels[i]}</span>${opt}`;
+    btn.onclick = () => answerQuiz(i);
+    opts.appendChild(btn);
+  });
+  document.getElementById('quiz-next').style.display = 'none';
+  document.getElementById('quiz-explanation').style.display = 'none';
+  quizAnswered = false;
+}
+function answerQuiz(idx) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const q = QUIZ_QUESTIONS[quizIndex];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach(o => o.classList.add('disabled'));
+  opts[q.correct].classList.add('correct');
+  if (idx !== q.correct) { opts[idx].classList.add('wrong'); playError(); }
+  else { quizScore += 50; quizCorrect++; playSuccess(); spawnStars(); }
+  document.getElementById('quiz-score-disp').textContent = quizScore;
+  document.getElementById('quiz-correct-count').textContent = lang==='en' ? `${quizCorrect} correct` : `${quizCorrect}টি সঠিক`;
+  document.getElementById('quiz-explanation').textContent = lang==='en' ? q.explain_en : q.explain_bn;
+  document.getElementById('quiz-explanation').style.display = 'block';
+  document.getElementById('quiz-next').style.display = 'inline-block';
+  if (idx === q.correct) { score += 50; document.getElementById('score-display').textContent = score; }
+}
+function nextQuestion() {
+  if (quizIndex < QUIZ_QUESTIONS.length - 1) {
+    quizIndex++;
+    renderQuestion();
+    playClick();
+  } else {
+    document.getElementById('quiz-question').textContent = lang==='en'
+      ? `🎊 Quiz Complete! Score: ${quizScore} pts · ${quizCorrect}/${QUIZ_QUESTIONS.length} correct!`
+      : `🎊 কুইজ সম্পন্ন! স্কোর: ${quizScore} · ${quizCorrect}/${QUIZ_QUESTIONS.length} সঠিক!`;
+    document.getElementById('quiz-options').innerHTML = '';
+    document.getElementById('quiz-next').style.display = 'none';
+    document.getElementById('quiz-explanation').style.display = 'none';
+    document.getElementById('quiz-prog').style.width = '100%';
+    spawnStars(); playSuccess();
+  }
+}
+function restartQuiz() { initQuiz(); playClick(); }
+
+/* ================================================================
+   FUN FACT
+   ================================================================ */
+function updateFunFact() {
+  const fact = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
+  document.getElementById('fun-fact').textContent = lang==='en' ? fact.en : fact.bn;
+}
+
+/* ================================================================
+   LEARN TABLE
+   ================================================================ */
+function renderLearnTable() {
+  const tbody = document.getElementById('learn-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  ELEMENTS.forEach(el => {
+    const tr = document.createElement('tr');
+    const shellStr = el.shells.join(', ');
+    const totalE = el.shells.reduce((a,b)=>a+b,0);
+    tr.innerHTML = `
+      <td>${lang==='en' ? el.name : el.nameBn}</td>
+      <td class="sym">${el.sym}</td>
+      <td style="color:var(--text-dim)">${el.Z}</td>
+      <td class="p-col">${el.Z}</td>
+      <td class="n-col">${el.N}</td>
+      <td class="e-col">${totalE}</td>
+      <td style="color:var(--electron-col);font-family:var(--font-game);font-size:0.75rem;">${shellStr}</td>
+      <td style="color:var(--accent-purple);font-family:var(--font-game)">${el.Z+el.N}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ================================================================
+   3D ATOM — THREE.JS ENGINE
+   ================================================================ */
+let scene, camera, renderer, atomGroup;
+let nucleusMeshes = [];
+let orbitRings = [];
+let electronMeshes = [];
+let electronAngles = [];
+let electronSpeeds = [];
+let electronOrbits = [];
+let glowMesh = null;
+let animationId = null;
+
+// Orbit control state
+let isDragging = false;
+let prevMouse = { x: 0, y: 0 };
+let rotationVelocity = { x: 0, y: 0 };
+
+const SHELL_RADII = [2.2, 3.8, 5.4, 7.0, 8.6];
+const MAX_PER_SHELL = [2, 8, 8, 18, 8];
+
+function initThreeJS() {
+  const wrap = document.getElementById('atom-canvas-wrap');
+  const size = wrap.clientWidth || 400;
+
+  // Scene
+  scene = new THREE.Scene();
+
+  // Camera
+  camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  camera.position.set(0, 0, 18);
+
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(size, size);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  wrap.insertBefore(renderer.domElement, wrap.firstChild);
+
+  // Atom group
+  atomGroup = new THREE.Group();
+  scene.add(atomGroup);
+
+  // Ambient + point lights
+  scene.add(new THREE.AmbientLight(0x223366, 0.8));
+  const pLight1 = new THREE.PointLight(0x00d4ff, 1.5, 40);
+  pLight1.position.set(5, 5, 5);
+  scene.add(pLight1);
+  const pLight2 = new THREE.PointLight(0xff4d6d, 0.8, 30);
+  pLight2.position.set(-5, -5, 3);
+  scene.add(pLight2);
+  const pLight3 = new THREE.PointLight(0xffe94d, 0.6, 25);
+  pLight3.position.set(0, 8, -5);
+  scene.add(pLight3);
+
+  // Drag to rotate
+  const cvs = renderer.domElement;
+  cvs.addEventListener('mousedown', e => {
+    isDragging = true;
+    prevMouse = { x: e.clientX, y: e.clientY };
+    rotationVelocity = { x: 0, y: 0 };
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevMouse.x;
+    const dy = e.clientY - prevMouse.y;
+    rotationVelocity.y = dx * 0.008;
+    rotationVelocity.x = dy * 0.008;
+    atomGroup.rotation.y += rotationVelocity.y;
+    atomGroup.rotation.x += rotationVelocity.x;
+    prevMouse = { x: e.clientX, y: e.clientY };
+  });
+  window.addEventListener('mouseup', () => { isDragging = false; });
+
+  // Touch rotate
+  let prevTouch = null;
+  cvs.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) prevTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  });
+  cvs.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && prevTouch) {
+      const dx = e.touches[0].clientX - prevTouch.x;
+      const dy = e.touches[0].clientY - prevTouch.y;
+      rotationVelocity.y = dx * 0.008;
+      rotationVelocity.x = dy * 0.008;
+      atomGroup.rotation.y += rotationVelocity.y;
+      atomGroup.rotation.x += rotationVelocity.x;
+      prevTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  });
+  cvs.addEventListener('touchend', () => { prevTouch = null; });
+
+  // Scroll zoom
+  cvs.addEventListener('wheel', e => {
+    e.preventDefault();
+    camera.position.z = Math.max(8, Math.min(30, camera.position.z + e.deltaY * 0.03));
+  }, { passive: false });
+
+  // Resize
+  window.addEventListener('resize', () => {
+    const w = wrap.clientWidth;
+    renderer.setSize(w, w);
+    camera.aspect = 1;
+    camera.updateProjectionMatrix();
+  });
+
+  rebuild3DAtom();
+  animate3D();
+}
+
+function makeNucleusSphere(color, emissive, radius = 0.35) {
+  const geo = new THREE.SphereGeometry(radius, 20, 20);
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    emissive,
+    emissiveIntensity: 0.55,
+    roughness: 0.3,
+    metalness: 0.6,
+  });
+  return new THREE.Mesh(geo, mat);
+}
+
+function makeElectronSphere() {
+  const geo = new THREE.SphereGeometry(0.18, 14, 14);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffe94d,
+    emissive: 0xffcc00,
+    emissiveIntensity: 1.2,
+    roughness: 0.1,
+    metalness: 0.2,
+  });
+  return new THREE.Mesh(geo, mat);
+}
+
+function makeOrbitRing(radius, tiltX = 0, tiltZ = 0, shellIndex = 0) {
+  const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, 2*Math.PI, false, 0);
+  const points = curve.getPoints(80);
+  const geo = new THREE.BufferGeometry().setFromPoints(
+    points.map(p => new THREE.Vector3(p.x, p.y, 0))
+  );
+  const hue = (shellIndex * 0.15 + 0.55) % 1.0;
+  const col = new THREE.Color().setHSL(hue, 0.9, 0.6);
+  const mat = new THREE.LineBasicMaterial({ color: col, opacity: 0.35, transparent: true });
+  const ring = new THREE.Line(geo, mat);
+  ring.rotation.x = tiltX;
+  ring.rotation.z = tiltZ;
+  return ring;
+}
+
+function makeNucleusGlow(radius) {
+  const geo = new THREE.SphereGeometry(radius + 0.4, 24, 24);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x3355ff,
+    transparent: true,
+    opacity: 0.07,
+    side: THREE.BackSide,
+  });
+  return new THREE.Mesh(geo, mat);
+}
+
+function distributeElectrons3D(total) {
+  const result = [];
+  let remaining = total;
+  for (let i = 0; i < MAX_PER_SHELL.length && remaining > 0; i++) {
+    result.push(Math.min(MAX_PER_SHELL[i], remaining));
+    remaining -= result[result.length - 1];
+  }
+  return result;
+}
+
+function packNucleusPositions(count) {
+  // Fibonacci sphere packing for nucleus particles
+  const positions = [];
+  if (count === 0) return positions;
+  if (count === 1) { positions.push(new THREE.Vector3(0,0,0)); return positions; }
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  const r = 0.36 * Math.cbrt(count);
+  for (let i = 0; i < count; i++) {
+    const y = 1 - (i / (count - 1)) * 2;
+    const radius = Math.sqrt(1 - y*y) * r;
+    const theta = goldenAngle * i;
+    positions.push(new THREE.Vector3(
+      Math.cos(theta) * radius,
+      y * r,
+      Math.sin(theta) * radius
+    ));
+  }
+  return positions;
+}
+
+function rebuild3DAtom() {
+  if (!scene) return;
+
+  // Clear previous
+  nucleusMeshes.forEach(m => atomGroup.remove(m));
+  orbitRings.forEach(r => atomGroup.remove(r));
+  electronMeshes.forEach(e => atomGroup.remove(e));
+  if (glowMesh) atomGroup.remove(glowMesh);
+  nucleusMeshes = []; orbitRings = []; electronMeshes = [];
+  electronAngles = []; electronSpeeds = []; electronOrbits = [];
+
+  const totalNucleons = build.p + build.n;
+
+  // Nucleus particles
+  const positions = packNucleusPositions(totalNucleons);
+  let pIdx = 0, nIdx = 0;
+  for (let i = 0; i < totalNucleons; i++) {
+    let mesh;
+    if (pIdx < build.p) {
+      mesh = makeNucleusSphere(0xff4d6d, 0xff0040, 0.34);
+      pIdx++;
+    } else {
+      mesh = makeNucleusSphere(0x00d4ff, 0x00aaff, 0.34);
+      nIdx++;
+    }
+    if (positions[i]) mesh.position.copy(positions[i]);
+    atomGroup.add(mesh);
+    nucleusMeshes.push(mesh);
+  }
+
+  // Nucleus glow
+  const nucRadius = totalNucleons > 0 ? 0.36 * Math.cbrt(totalNucleons) + 0.3 : 0.6;
+  glowMesh = makeNucleusGlow(nucRadius);
+  atomGroup.add(glowMesh);
+
+  // Electron shells
+  const shellDist = distributeElectrons3D(build.e);
+  const shellTilts = [
+    [0, 0],
+    [Math.PI/3, Math.PI/6],
+    [Math.PI/2, Math.PI/4],
+    [Math.PI/4, Math.PI/3],
+    [Math.PI*0.6, 0],
+  ];
+
+  shellDist.forEach((count, si) => {
+    const r = SHELL_RADII[si];
+    const [tiltX, tiltZ] = shellTilts[si] || [0, 0];
+
+    // Ring
+    const ring = makeOrbitRing(r, tiltX, tiltZ, si);
+    atomGroup.add(ring);
+    orbitRings.push(ring);
+
+    // Electrons on this shell
+    for (let ei = 0; ei < count; ei++) {
+      const eMesh = makeElectronSphere();
+      atomGroup.add(eMesh);
+      electronMeshes.push(eMesh);
+      const startAngle = (ei / Math.max(1, count)) * Math.PI * 2;
+      electronAngles.push(startAngle);
+      electronSpeeds.push(1.2 - si * 0.18);
+      // Store orbit info: radius, tiltX, tiltZ
+      electronOrbits.push({ r, tiltX, tiltZ });
+    }
+  });
+}
+
+function animate3D() {
+  animationId = requestAnimationFrame(animate3D);
+
+  // Inertia rotation
+  if (!isDragging) {
+    rotationVelocity.x *= 0.92;
+    rotationVelocity.y *= 0.92;
+    atomGroup.rotation.y += rotationVelocity.y + 0.003;
+    atomGroup.rotation.x += rotationVelocity.x;
+  }
+
+  // Nucleus pulse
+  const t = Date.now() * 0.001;
+  nucleusMeshes.forEach((m, i) => {
+    const phase = (i / Math.max(1, nucleusMeshes.length)) * Math.PI * 2;
+    const s = 1 + 0.04 * Math.sin(t * 2 + phase);
+    m.scale.setScalar(s);
+  });
+
+  // Animate electrons
+  electronMeshes.forEach((eMesh, i) => {
+    electronAngles[i] += electronSpeeds[i] * 0.018;
+    const { r, tiltX, tiltZ } = electronOrbits[i];
+    const angle = electronAngles[i];
+
+    // Position on a tilted circle
+    const x0 = Math.cos(angle) * r;
+    const y0 = Math.sin(angle) * r;
+    const z0 = 0;
+
+    // Apply tilt rotations (Y stays fixed, tiltX and tiltZ)
+    // Rotate around X axis by tiltX
+    const y1 = y0 * Math.cos(tiltX) - z0 * Math.sin(tiltX);
+    const z1 = y0 * Math.sin(tiltX) + z0 * Math.cos(tiltX);
+    // Rotate around Z axis by tiltZ
+    const x2 = x0 * Math.cos(tiltZ) - y1 * Math.sin(tiltZ);
+    const y2 = x0 * Math.sin(tiltZ) + y1 * Math.cos(tiltZ);
+    const z2 = z1;
+
+    eMesh.position.set(x2, y2, z2);
+
+    // Slight glow pulse
+    const glow = 0.8 + 0.4 * Math.sin(t * 3 + i);
+    eMesh.material.emissiveIntensity = glow;
+  });
+
+  renderer.render(scene, camera);
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+function init() {
+  initLevels();
+  renderTarget();
+  updateElementInfo();
+  initQuiz();
+  renderLearnTable();
+  updateFunFact();
+  // Init 3D after DOM layout
+  setTimeout(() => {
+    initThreeJS();
+  }, 80);
+  // Show help on first visit
+  setTimeout(() => {
+    if (!sessionStorage.getItem('atomHelp3D')) {
+      sessionStorage.setItem('atomHelp3D','1');
+      showHelp();
+    }
+  }, 900);
+}
+
+init();
+</script>
+</body>
+</html>

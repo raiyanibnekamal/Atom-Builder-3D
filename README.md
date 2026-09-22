@@ -1,0 +1,52 @@
+# Atom Builder 3D
+
+A bilingual Bangla/English 3D atom explorer for NCTB Class 8 science learners. Build atoms visually, inspect particle structure, and test your understanding through an interactive quiz.
+
+## Highlights
+
+- Three.js-powered 3D atom visualization with animated nucleus, electron shells, lighting, and orbit motion.
+- Builder mode with drag-and-drop placement of protons, neutrons, and electrons.
+- 10 guided element targets: Hydrogen (H), Helium (He), Lithium (Li), Beryllium (Be), Boron (B), Carbon (C), Nitrogen (N), Oxygen (O), Fluorine (F), and Neon (Ne).
+- 12-question quiz with instant feedback, explanations, score tracking, and restart support.
+- Learn mode with atomic number, proton, neutron, electron, shell configuration, and mass number tables.
+- English/Bangla language toggle with bilingual element facts and learning content.
+- Mouse and touch rotation, scroll/pinch-style zoom behavior, sound effects, progress tracking, and responsive layout.
+- No build step or package installation required. Three.js and web fonts are loaded from CDNs.
+
+## Learning Model
+
+The explorer uses the simplified neutral-atom model used throughout the learning experience:
+
+- Atomic number (Z) = number of protons.
+- A neutral atom has the same number of electrons as protons.
+- Mass number (A) = protons + neutrons.
+- Electrons are distributed across shells using the project shell capacities `[2, 8, 8, 18, 8]` for the supported targets.
+
+The embedded dataset includes particle counts, shell configurations, element categories, bilingual names, and fun facts for each target element.
+
+## Run Locally
+
+Open `Atom model.html` directly in a modern browser, or serve the folder with any static web server:
+
+```text
+python -m http.server 8000
+```
+
+Then visit `http://localhost:8000/Atom%20model.html`.
+
+A WebGL-capable browser and an internet connection are recommended because the app loads Three.js and fonts from CDNs.
+
+## GitHub Pages
+
+This is a static HTML project and can be published with GitHub Pages. After pushing the repository, select **Settings > Pages**, choose the deployment branch and root folder, then open the generated Pages URL.
+
+## Project Structure
+
+```text
+Atom model.html   Main application: markup, styles, datasets, and JavaScript
+README.md         Project documentation
+```
+
+## Credits
+
+Built with HTML, CSS, JavaScript, and [Three.js](https://threejs.org/). Designed as an interactive companion for NCTB Class 8 science topics on atomic structure.
