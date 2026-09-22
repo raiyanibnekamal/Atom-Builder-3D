@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="MD Raiyan Ibne Kamal">
+<meta name="description" content="Atom Builder 3D is a bilingual Bangla and English Three.js atom explorer for NCTB Class 8 science learners, created by MD Raiyan Ibne Kamal.">
 <title>Atom Builder 3D — Atomic Explorer</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -785,6 +787,14 @@ body::before {
   #main-content { padding: 12px 8px; }
   .panel { padding: 13px; }
 }
+.project-credit {
+  padding: 10px 16px 18px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.project-credit a { color: #00d4ff; text-decoration: none; }
+.project-credit a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -1136,6 +1146,11 @@ body::before {
 
 <!-- Drag ghost -->
 <div id="drag-ghost" class="drag-ghost"></div>
+
+<footer class="project-credit">
+  Created by <strong>MD Raiyan Ibne Kamal</strong> ·
+  <a href="https://github.com/raiyanibnekamal/Atom-Builder-3D" target="_blank" rel="noreferrer">View project on GitHub</a>
+</footer>
 
 <script>
 /* ================================================================

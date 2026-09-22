@@ -2,6 +2,8 @@
 
 A bilingual Bangla/English 3D atom explorer for NCTB Class 8 science learners. Build atoms visually, inspect particle structure, and test your understanding through an interactive quiz.
 
+**Created and maintained by MD Raiyan Ibne Kamal** · [GitHub profile](https://github.com/raiyanibnekamal) · [Project repository](https://github.com/raiyanibnekamal/Atom-Builder-3D)
+
 ## Highlights
 
 - Three.js-powered 3D atom visualization with animated nucleus, electron shells, lighting, and orbit motion.
@@ -26,13 +28,13 @@ The embedded dataset includes particle counts, shell configurations, element cat
 
 ## Run Locally
 
-Open `Atom model.html` directly in a modern browser, or serve the folder with any static web server:
+Open `index.html` directly in a modern browser, or serve the folder with any static web server:
 
 ```text
 python -m http.server 8000
 ```
 
-Then visit `http://localhost:8000/Atom%20model.html`.
+Then visit `http://localhost:8000/`.
 
 A WebGL-capable browser and an internet connection are recommended because the app loads Three.js and fonts from CDNs.
 
@@ -40,13 +42,17 @@ A WebGL-capable browser and an internet connection are recommended because the a
 
 This is a static HTML project and can be published with GitHub Pages. After pushing the repository, select **Settings > Pages**, choose the deployment branch and root folder, then open the generated Pages URL.
 
+The repository is owned and published by [raiyanibnekamal](https://github.com/raiyanibnekamal). The source, learning content, interface, interaction logic, and Three.js visualization in this repository were created for this project by the author named above.
+
 ## Project Structure
 
 ```text
-Atom model.html   Main application: markup, styles, datasets, and JavaScript
+index.html        Main application: markup, styles, datasets, and JavaScript
 README.md         Project documentation
 ```
 
 ## Credits
+
+Created by **MD Raiyan Ibne Kamal**.
 
 Built with HTML, CSS, JavaScript, and [Three.js](https://threejs.org/). Designed as an interactive companion for NCTB Class 8 science topics on atomic structure.
