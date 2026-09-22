@@ -2,7 +2,7 @@
 
 A bilingual Bangla/English 3D atom explorer for NCTB Class 8 science learners. Build atoms visually, inspect particle structure, and test your understanding through an interactive quiz.
 
-**Created and maintained by MD Raiyan Ibne Kamal** · [GitHub profile](https://github.com/raiyanibnekamal) · [Project repository](https://github.com/raiyanibnekamal/Atom-Builder-3D)
+**Created and maintained by MD Raiyan Ibne Kamal** · [GitHub profile](https://github.com/raiyanibnekamal) · [Project repository](https://github.com/raiyanibnekamal/Atom-Builder-3D) · [Live site](https://raiyanibnekamal.github.io/Atom-Builder-3D/)
 
 ## Highlights
 
@@ -40,7 +40,9 @@ A WebGL-capable browser and an internet connection are recommended because the a
 
 ## GitHub Pages
 
-This is a static HTML project and can be published with GitHub Pages. After pushing the repository, select **Settings > Pages**, choose the deployment branch and root folder, then open the generated Pages URL.
+The project is live here: **[Open Atom Builder 3D](https://raiyanibnekamal.github.io/Atom-Builder-3D/)**.
+
+Source code: **[GitHub repository](https://github.com/raiyanibnekamal/Atom-Builder-3D)**. This is a static HTML project published from the `main` branch with GitHub Pages.
 
 The repository is owned and published by [raiyanibnekamal](https://github.com/raiyanibnekamal). The source, learning content, interface, interaction logic, and Three.js visualization in this repository were created for this project by the author named above.
 
